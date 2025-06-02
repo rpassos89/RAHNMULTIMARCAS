@@ -1,0 +1,1391 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rahn Multimarcas - Sistema de Controle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --dark-bg: #333333;
+            --card-bg: #424242;
+            --accent-yellow: #F5B900;
+            --text-light: #E0E0E0;
+            --green-success: #4CAF50;
+            --red-danger: #EF4444;
+            --blue-primary: #3b82f6;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--dark-bg); color: var(--text-light); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+        .card { background-color: var(--card-bg); border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); padding: 1.5rem; }
+        .btn-primary { background-color: var(--accent-yellow); color: var(--dark-bg); padding: 0.75rem 1.25rem; border-radius: 0.5rem; transition: background-color 0.2s ease-in-out; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); font-weight: 600; }
+        .btn-primary:hover { background-color: #e0a800; }
+        .btn-danger { background-color: var(--red-danger); color: #ffffff; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: background-color 0.2s ease-in-out; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .input-field { background-color: #4a4a4a; border: 1px solid #5a5a5a; border-radius: 0.5rem; padding: 0.75rem 1rem; width: 100%; color: var(--text-light); transition: border-color 0.2s ease-in-out; }
+        .input-field:focus { outline: none; border-color: var(--accent-yellow); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #4a4a4a; }
+        th { background-color: #3f3f3f; font-weight: 600; color: var(--accent-yellow); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--card-bg); margin: auto; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 8px 16px rgba(0,0,0,0.4); width: 90%; max-width: 500px; position: relative; color: var(--text-light); }
+        .close-button { color: var(--text-light); position: absolute; top: 1rem; right: 1.5rem; font-size: 1.75rem; font-weight: bold; }
+        .close-button:hover, .close-button:focus { color: var(--accent-yellow); text-decoration: none; cursor: pointer; }
+        .dashboard-card { background-color: var(--card-bg); padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .dashboard-card h3 { color: var(--accent-yellow); font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+        .dashboard-card p { color: var(--text-light); font-size: 2.25rem; font-weight: 700; margin-top: 0.5rem; }
+        .dashboard-card .status-tag { background-color: var(--green-success); color: var(--dark-bg); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem; display: inline-block; }
+        .dashboard-card .text-muted { color: #a0a0a0; font-size: 0.875rem; }
+        .nav-btn { background-color: transparent; color: var(--text-light); padding: 0.75rem 1.25rem; border-radius: 0.5rem; transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-btn.active { background-color: var(--accent-yellow); color: var(--dark-bg); }
+        .nav-btn:hover:not(.active) { background-color: #4a4a4a; }
+        .logo-container { border-radius: 50%; padding: 0.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
+        .logo-container img { height: 60px; width: auto; border-radius: 50%; }
+        #growthChartCanvas { width: 100%; height: 300px; background-color: #2e2e2e; border-radius: 0.5rem; }
+        #relatorios p { font-size: 0.95rem !important; }
+        #relatorios .report-detail { font-size: 0.9rem !important; margin-top: 0.25rem !important; }
+        #relatorios .report-detail span { font-size: 0.9rem !important; }
+        #relatorios ul li { font-size: 0.95rem !important; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-700">
+    <div class="container min-h-screen flex flex-col">
+        <header class="flex flex-col sm:flex-row items-center justify-between py-6 px-4 bg-gray-800 rounded-lg shadow-md mb-6">
+            <div class="flex items-center mb-4 sm:mb-0">
+                <div class="logo-container h-16 w-16 mr-4">
+                            <img src="logo_rahn.jpeg" alt="Rahn Multimarcas Logo" class="h-16 w-16 object-cover rounded-full">
+
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold text-white">RAHN MULTIMARCAS</h1>
+                    <p class="text-gray-400 text-lg">Sistema de Gestão Completo</p>
+                </div>
+            </div>
+            <nav class="flex space-x-2 sm:space-x-4">
+                <button onclick="showSection('dashboard', this)" class="nav-btn active"><i class="fas fa-chart-line"></i> Dashboard</button>
+                <button onclick="showSection('financeiro', this)" class="nav-btn"><i class="fas fa-dollar-sign"></i> Financeiro</button>
+                <button onclick="showSection('estoque', this)" class="nav-btn"><i class="fas fa-warehouse"></i> Estoque</button>
+                <button onclick="showSection('gastosVeiculo', this)" class="nav-btn"><i class="fas fa-car-side"></i> Gastos Veículo</button>
+                <button onclick="showSection('clientes', this)" class="nav-btn"><i class="fas fa-users"></i> Clientes</button>
+                <button onclick="showSection('cadastro', this)" class="nav-btn"><i class="fas fa-plus-circle"></i> Cadastrar</button>
+                <button onclick="showSection('relatorios', this)" class="nav-btn"><i class="fas fa-chart-pie"></i> Relatórios</button>
+                <button onclick="sendWhatsAppSummary()" class="btn-primary flex items-center"><i class="fab fa-whatsapp mr-2"></i> WhatsApp</button>
+            </nav>
+        </header>
+
+        <section id="dashboard" class="card mb-6 flex-grow">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Dashboard Executivo</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="dashboard-card lg:col-span-2">
+                    <h3><i class="fas fa-coins"></i> Saldo Total Disponível</h3>
+                    <p id="saldoTotalDisponivelDisplay">R$ 0,00</p>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-chart-line"></i> Lucro do Mês</h3>
+                    <p id="lucroMesDisplay">R$ 0,00</p>
+                    <span class="status-tag" style="background-color: var(--green-success);">Em crescimento</span>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-bullseye"></i> Meta Mensal</h3>
+                    <p id="metaMensalDisplay">R$ 50.000,00</p>
+                    <p class="text-muted" id="metaAtingida">0% atingido</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-hand-holding-usd"></i> Patrimônio Líquido</h3>
+                    <p id="patrimonioTotalDisplay">R$ 0,00</p>
+                    <span class="status-tag" style="background-color: var(--green-success);">Em crescimento</span>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-car"></i> Valor do Estoque (Custo)</h3>
+                    <p id="valorEstoqueDisplay">R$ 0,00</p>
+                    <p class="text-muted" id="totalVeiculosEstoque">0 veículos</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-chart-bar"></i> Resumo de Vendas</h3>
+                    <p class="text-md font-medium text-white">Vendas hoje: <span id="vendasHoje" class="font-bold">0</span></p>
+                    <p class="text-md font-medium text-white">Vendas no mês: <span id="vendasMes" class="font-bold">0</span></p>
+                    <p class="text-md font-medium text-white">Ticket médio: <span id="ticketMedio" class="font-bold">R$ 0,00</span></p>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-clipboard-list"></i> Status do Estoque</h3>
+                    <p class="text-md font-medium text-white">Carros disponíveis: <span id="carrosDisponiveis" class="font-bold">0</span></p>
+                    <p class="text-md font-medium text-white">Carros vendidos: <span id="carrosVendidos" class="font-bold">0</span></p>
+                    <p class="text-md font-medium text-white">Giro médio: <span id="giroMedio" class="font-bold">0 dias</span></p>
+                </div>
+            </div>
+            <div class="dashboard-card mt-6">
+                <h3 class="text-lg font-medium text-white mb-3"><i class="fas fa-chart-area"></i> Gráfico de Crescimento (Lucro Total)</h3>
+                <canvas id="growthChartCanvas"></canvas>
+            </div>
+        </section>
+
+        <section id="financeiro" class="card mb-6 hidden flex-grow">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Controle Financeiro</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-hand-holding-usd"></i> Aportes (Histórico)</h3>
+                    <p id="aportesDisplayFinanceiro">R$ 0,00</p>
+                     <div class="mt-3">
+                        <div class="flex items-center mb-2">
+                            <input type="number" id="inputAporte" placeholder="Valor do Aporte" class="input-field w-full mr-2">
+                        </div>
+                        <div class="mb-2">
+                            <label for="aporteDestino" class="block text-sm font-medium text-gray-300">Destino do Aporte (Conta):</label>
+                            <select id="aporteDestino" class="input-field mt-1" required>
+                                </select>
+                        </div>
+                        <button onclick="addAporte()" class="btn-primary text-sm px-4 py-2 w-full">Adicionar Aporte</button>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-university"></i> Saldos em Contas (Total)</h3>
+                    <p id="saldosContasDisplayFinanceiro">R$ 0,00</p>
+                    <div class="flex justify-center mt-3">
+                        <button onclick="openManageAccountsModal()" class="btn-primary text-sm px-4 py-2"><i class="fas fa-cog mr-2"></i>Gerenciar Contas</button>
+                    </div>
+                </div>
+            </div>
+            <h3 class="text-xl font-semibold mb-3 text-white">Contas a Pagar</h3>
+            <form id="contasAPagarForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label for="descricaoConta" class="block text-sm font-medium text-gray-300">Descrição:</label>
+                    <input type="text" id="descricaoConta" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="valorConta" class="block text-sm font-medium text-gray-300">Valor (R$):</label>
+                    <input type="number" id="valorConta" class="input-field mt-1" step="0.01" required>
+                </div>
+                <div>
+                    <label for="dataVencimento" class="block text-sm font-medium text-gray-300">Vencimento:</label>
+                    <input type="date" id="dataVencimento" class="input-field mt-1" required>
+                </div>
+                <div class="md:col-span-3">
+                    <button type="submit" class="btn-primary w-full mt-4">Adicionar Conta</button>
+                </div>
+            </form>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-gray-800 rounded-lg shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Vencimento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contasAPagarTableBody">
+                        </tbody>
+                </table>
+            </div>
+            <div id="contasAPagarMessage" class="mt-4 text-center text-gray-500 hidden">Nenhuma conta a pagar encontrada.</div>
+        </section>
+
+        <section id="cadastro" class="card mb-6 flex-grow hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Cadastro de Veículos</h2>
+            <form id="cadastroForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label for="codigoInterno" class="block text-sm font-medium text-gray-300">Código Interno:</label>
+                    <input type="text" id="codigoInterno" class="input-field mt-1" placeholder="Ex: 001" readonly>
+                </div>
+                <div>
+                    <label for="marca" class="block text-sm font-medium text-gray-300">Marca:</label>
+                    <input type="text" id="marca" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="modelo" class="block text-sm font-medium text-gray-300">Modelo:</label>
+                    <input type="text" id="modelo" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="ano" class="block text-sm font-medium text-gray-300">Ano:</label>
+                    <input type="number" id="ano" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="km" class="block text-sm font-medium text-gray-300">KM:</label>
+                    <input type="number" id="km" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="cor" class="block text-sm font-medium text-gray-300">Cor:</label>
+                    <input type="text" id="cor" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="placa" class="block text-sm font-medium text-gray-300">Placa:</label>
+                    <input type="text" id="placa" class="input-field mt-1" placeholder="AAA-0000" pattern="[A-Z]{3}-\d{4}|[A-Z]{3}\d[A-Z]\d{2}" title="Formato: AAA-0000 ou AAA0A00" required>
+                </div>
+                <div>
+                    <label for="cambio" class="block text-sm font-medium text-gray-300">Câmbio:</label>
+                    <select id="cambio" class="input-field mt-1" required>
+                        <option value="">Selecione</option>
+                        <option value="manual">Manual</option>
+                        <option value="automatico">Automático</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="combustivel" class="block text-sm font-medium text-gray-300">Combustível:</label>
+                    <select id="combustivel" class="input-field mt-1" required>
+                        <option value="">Selecione</option>
+                        <option value="gasolina">Gasolina</option>
+                        <option value="etanol">Etanol</option>
+                        <option value="flex">Flex</option>
+                        <option value="diesel">Diesel</option>
+                        <option value="eletrico">Elétrico</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="chassi" class="block text-sm font-medium text-gray-300">Nº Chassi:</label>
+                    <input type="text" id="chassi" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="compraOrigemPagamento" class="block text-sm font-medium text-gray-300">Origem do Pagamento da Compra (Conta):</label>
+                    <select id="compraOrigemPagamento" class="input-field mt-1" required>
+                        </select>
+                </div>
+                <div>
+                    <label for="precoCompra" class="block text-sm font-medium text-gray-300">Preço de Compra (R$):</label>
+                    <input type="number" id="precoCompra" class="input-field mt-1" step="0.01" required>
+                </div>
+                <div>
+                    <label for="precoVenda" class="block text-sm font-medium text-gray-300">Preço de Venda (R$):</label>
+                    <input type="number" id="precoVenda" class="input-field mt-1" step="0.01" required>
+                </div>
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="observacoes" class="block text-sm font-medium text-gray-300">Observações:</label>
+                    <textarea id="observacoes" class="input-field mt-1 h-24"></textarea>
+                </div>
+                <div class="md:col-span-2 lg:col-span-3">
+                    <button type="submit" class="btn-primary w-full mt-4">Cadastrar Veículo</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="gastosVeiculo" class="card mb-6 flex-grow hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Gastos por Veículo</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="selectVehicleExpense" class="block text-sm font-medium text-gray-300">Selecionar Veículo:</label>
+                    <select id="selectVehicleExpense" class="input-field mt-1" onchange="renderVehicleExpenses()"></select>
+                </div>
+                <div>
+                    <label for="totalGastosVeiculo" class="block text-sm font-medium text-gray-300">Total de Gastos para este Veículo:</label>
+                    <p id="totalGastosVeiculo" class="text-xl font-bold text-accent-yellow mt-1">R$ 0,00</p>
+                </div>
+            </div>
+            <h3 class="text-xl font-semibold mb-3 text-white">Adicionar Gasto</h3>
+            <form id="addExpenseForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="md:col-span-2">
+                    <label for="descricaoGasto" class="block text-sm font-medium text-gray-300">Descrição do Gasto:</label>
+                    <input type="text" id="descricaoGasto" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="valorGasto" class="block text-sm font-medium text-gray-300">Valor (R$):</label>
+                    <input type="number" id="valorGasto" class="input-field mt-1" step="0.01" required>
+                </div>
+                <div>
+                    <label for="gastoOrigemPagamento" class="block text-sm font-medium text-gray-300">Origem do Pagamento (Conta):</label>
+                    <select id="gastoOrigemPagamento" class="input-field mt-1" required>
+                        </select>
+                </div>
+                <div class="md:col-span-4 flex items-end">
+                    <button type="submit" class="btn-primary w-full mt-4 md:mt-0">Adicionar Gasto</button>
+                </div>
+            </form>
+            <h3 class="text-xl font-semibold mb-3 text-white">Gastos Registrados</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-gray-800 rounded-lg shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Origem Pag. (Conta)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehicleExpensesTableBody">
+                        </tbody>
+                </table>
+            </div>
+            <div id="vehicleExpensesMessage" class="mt-4 text-center text-gray-500 hidden">Nenhum gasto registrado para este veículo.</div>
+        </section>
+
+        <section id="clientes" class="card mb-6 flex-grow hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Gestão de Clientes</h2>
+            <div class="mb-4 flex flex-col sm:flex-row items-center gap-4">
+                <input type="text" id="buscaCliente" placeholder="Buscar por nome, CPF/CNPJ..." class="input-field flex-grow">
+                <button onclick="searchClients()" class="btn-primary">Buscar</button>
+                <button onclick="clearClientSearch()" class="btn-danger">Limpar Busca</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-gray-800 rounded-lg shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>CPF/CNPJ</th>
+                            <th>Telefone</th>
+                            <th>Qtd. Carros</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTableBody">
+                        </tbody>
+                </table>
+            </div>
+            <div id="clientsMessage" class="mt-4 text-center text-gray-500 hidden">Nenhum cliente encontrado.</div>
+        </section>
+
+        <section id="estoque" class="card mb-6 flex-grow hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Estoque de Veículos</h2>
+            <div class="mb-4 flex flex-col sm:flex-row items-center gap-4">
+                <input type="text" id="buscaEstoque" placeholder="Buscar por marca, modelo, ano, código ou placa..." class="input-field flex-grow">
+                <button onclick="filtrarEstoque()" class="btn-primary">Buscar</button>
+                <button onclick="limparBusca()" class="btn-danger">Limpar Busca</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-gray-800 rounded-lg shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>Cód.</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Ano</th>
+                            <th>Placa</th>
+                            <th>Preço Compra</th>
+                            <th>Preço Venda</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="estoqueTableBody">
+                        </tbody>
+                </table>
+            </div>
+            <div id="estoqueMessage" class="mt-4 text-center text-gray-500 hidden">Nenhum veículo encontrado.</div>
+        </section>
+
+        <section id="relatorios" class="card mb-6 flex-grow">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Relatórios</h2>
+            <div class="dashboard-card mb-6">
+                <h3 class="text-lg font-medium text-white mb-3"><i class="fas fa-filter"></i> Filtrar Relatórios por Período</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="reportStartDate" class="block text-sm font-medium text-gray-300">Data Inicial:</label>
+                        <input type="date" id="reportStartDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportEndDate" class="block text-sm font-medium text-gray-300">Data Final:</label>
+                        <input type="date" id="reportEndDate" class="input-field mt-1">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="updateReports()" class="btn-primary w-full">Aplicar Filtro</button>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="dashboard-card">
+                    <h3 class="text-lg font-medium text-white mb-3">Resumo Financeiro Geral</h3>
+                    <p class="report-text">Total de Veículos Cadastrados: <span id="totalCadastrados" class="font-bold report-detail">0</span></p>
+                    <p class="report-text">Total de Veículos Disponíveis: <span id="totalDisponiveis" class="font-bold report-detail">0</span></p>
+                    <p class="report-text">Total de Veículos Vendidos (Período): <span id="totalVendidos" class="font-bold report-detail">0</span></p>
+                    <p class="report-text">Lucro Total de Vendas (Período): <span id="lucroTotalRelatorio" class="font-bold report-detail">R$ 0,00</span></p>
+                    <p class="report-text">Total de Contas Pagas (Período): <span id="totalContasPagasRelatorio" class="font-bold report-detail">R$ 0,00</span></p>
+                    <p class="report-text">Total de Contas Pendentes (Geral): <span id="totalContasPendentesRelatorio" class="font-bold report-detail">R$ 0,00</span></p>
+                </div>
+                <div class="dashboard-card">
+                    <h3 class="text-lg font-medium text-white mb-3">Distribuição por Marca (Estoque Atual)</h3>
+                    <ul id="distribuicaoMarca" class="list-disc pl-5">
+                        </ul>
+                </div>
+            </div>
+            <div class="dashboard-card mt-6">
+                <h3 class="text-lg font-medium text-white mb-3">Relatório por Veículo</h3>
+                <div class="mb-4">
+                    <label for="selectVehicleReport" class="block text-sm font-medium text-gray-300">Selecionar Veículo:</label>
+                    <select id="selectVehicleReport" class="input-field mt-1" onchange="renderVehicleReport()"></select>
+                </div>
+                <div id="vehicleReportDetails" class="mt-4">
+                    <p class="text-gray-400">Selecione um veículo para ver os detalhes.</p>
+                    </div>
+            </div>
+            <!-- MODIFICADO: Adicionado input de arquivo para restaurar e botão -->
+            <div class="mt-6 text-center space-x-2 sm:space-x-4 flex flex-wrap justify-center gap-2">
+                <button onclick="createBackup()" class="btn-primary text-sm sm:text-base"><i class="fas fa-download mr-2"></i> Backup (JSON)</button>
+                <input type="file" id="restoreFile" accept=".json" style="display: none;">
+                <button onclick="document.getElementById('restoreFile').click()" class="btn-primary text-sm sm:text-base"><i class="fas fa-upload mr-2"></i> Restaurar (JSON)</button>
+                <button onclick="exportToCsv()" class="btn-primary text-sm sm:text-base"><i class="fas fa-file-csv mr-2"></i> Exportar (CSV)</button>
+            </div>
+        </section>
+
+        <div id="messageModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" onclick="closeMessageModal()">&times;</span>
+                <p id="modalMessage" class="text-lg text-center"></p>
+                <div class="flex justify-center mt-4">
+                    <button onclick="closeMessageModal()" class="btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="confirmSaleModal" class="modal">
+            <div class="modal-content max-w-md">
+                <span class="close-button" onclick="closeConfirmSaleModal()">&times;</span>
+                <h3 class="text-xl font-bold mb-4 text-center text-accent-yellow">Confirmar Venda</h3>
+                <p class="text-lg text-center mb-4">Marcar este veículo como vendido?</p>
+                <form id="saleDetailsForm">
+                    <div class="mb-4">
+                        <label for="clientName" class="block text-sm font-medium text-gray-300">Nome do Cliente:</label>
+                        <input type="text" id="clientName" class="input-field mt-1" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="clientCpfCnpj" class="block text-sm font-medium text-gray-300">CPF/CNPJ do Cliente:</label>
+                        <input type="text" id="clientCpfCnpj" class="input-field mt-1" placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00">
+                    </div>
+                     <div class="mb-4">
+                        <label for="clientPhone" class="block text-sm font-medium text-gray-300">Telefone do Cliente:</label>
+                        <input type="text" id="clientPhone" class="input-field mt-1" placeholder="(DD) 9XXXX-XXXX">
+                    </div>
+                    <div class="mb-4">
+                        <label for="saleDate" class="block text-sm font-medium text-gray-300">Data da Venda:</label>
+                        <input type="date" id="saleDate" class="input-field mt-1" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="paymentMethod" class="block text-sm font-medium text-gray-300">Forma de Pagamento:</label>
+                        <select id="paymentMethod" class="input-field mt-1" required>
+                            <option value="">Selecione</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">PIX</option>
+                            <option value="transferencia">Transferência Bancária</option>
+                            <option value="financiamento">Financiamento</option>
+                            <option value="cartao">Cartão de Crédito/Débito</option>
+                            <option value="troca">Troca por Veículo</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div id="paymentDestinationDiv" class="mb-4 hidden">
+                        <label for="paymentDestination" class="block text-sm font-medium text-gray-300">Destino do Valor (Conta):</label>
+                        <select id="paymentDestination" class="input-field mt-1"></select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="actualSalePrice" class="block text-sm font-medium text-gray-300">Valor Final da Venda (R$):</label>
+                        <input type="number" id="actualSalePrice" class="input-field mt-1" step="0.01" required>
+                    </div>
+                    <div class="flex justify-center space-x-4 mt-6">
+                        <button type="submit" class="btn-primary" id="confirmSaleBtnSubmit">Confirmar</button>
+                        <button type="button" onclick="closeConfirmSaleModal()" class="btn-danger">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="saleProfitModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" onclick="closeSaleProfitModal()">&times;</span>
+                <h3 class="text-2xl font-bold mb-4 text-center text-accent-yellow">Detalhes da Venda</h3>
+                <div class="text-lg mb-2">
+                    <p>Veículo: <span id="soldVehicleName" class="font-semibold"></span> (<span id="soldVehicleCodigo"></span>)</p>
+                    <p>Preço de Compra: <span id="soldPriceCompra" class="font-semibold"></span></p>
+                    <p>Gastos Totais: <span id="soldTotalGastos" class="font-semibold"></span></p>
+                    <p>Preço de Venda: <span id="soldPriceVenda" class="font-semibold"></span></p>
+                    <p class="mt-4">Lucro em Reais: <span id="soldLucroReais" class="font-bold text-green-success"></span></p>
+                    <p>Lucro em Porcentagem: <span id="soldLucroPercent" class="font-bold text-green-success"></span></p>
+                </div>
+                <div class="flex justify-center mt-6">
+                    <button onclick="closeSaleProfitModal()" class="btn-primary">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="confirmPayBillModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" onclick="closeConfirmPayBillModal()">&times;</span>
+                <h3 class="text-xl font-bold mb-4 text-center text-accent-yellow">Confirmar Pagamento de Conta</h3>
+                <p class="text-center mb-2">Marcar esta conta como paga?</p>
+                <p class="text-center mb-1 text-sm text-gray-400">Conta: <span id="billToPayDescription"></span></p>
+                <p class="text-center mb-4 text-sm text-gray-400">Valor: <span id="billToPayValue"></span></p>
+
+                <div class="mb-4">
+                    <label for="contaOrigemPagamento" class="block text-sm font-medium text-gray-300">Origem do Pagamento (Conta):</label>
+                    <select id="contaOrigemPagamento" class="input-field mt-1" required>
+                        </select>
+                </div>
+                <div class="flex justify-center space-x-4 mt-6">
+                    <button id="confirmPayBillButton" class="btn-primary">Sim, Pagar</button>
+                    <button type="button" onclick="closeConfirmPayBillModal()" class="btn-danger">Não</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="manageAccountsModal" class="modal">
+            <div class="modal-content max-w-2xl">
+                <span class="close-button" onclick="closeManageAccountsModal()">&times;</span>
+                <h3 class="text-2xl font-bold mb-4 text-center text-accent-yellow">Gerenciar Contas</h3>
+                <h4 class="text-xl font-semibold mb-3 text-white">Adicionar Nova Conta (Banco ou Caixa Físico)</h4>
+                <form id="addAccountForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="accountName" class="block text-sm font-medium text-gray-300">Nome da Conta (Ex: Banco X, Caixa Loja):</label>
+                        <input type="text" id="accountName" class="input-field mt-1" required>
+                    </div>
+                    <div>
+                        <label for="accountBalance" class="block text-sm font-medium text-gray-300">Saldo Inicial (R$):</label>
+                        <input type="number" id="accountBalance" class="input-field mt-1" step="0.01" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="btn-primary w-full mt-4">Adicionar Conta</button>
+                    </div>
+                </form>
+                <h4 class="text-xl font-semibold mb-3 text-white">Contas Cadastradas</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-gray-800 rounded-lg shadow-sm">
+                        <thead>
+                            <tr>
+                                <th>Nome da Conta</th>
+                                <th>Saldo</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="accountsMessage" class="mt-4 text-center text-gray-500 hidden">Nenhuma conta adicionada.</div>
+            </div>
+        </div>
+
+        <div id="clientDetailsModal" class="modal">
+            <div class="modal-content max-w-xl">
+                <span class="close-button" onclick="closeClientDetailsModal()">&times;</span>
+                <h3 class="text-2xl font-bold mb-4 text-center text-accent-yellow">Detalhes do Cliente</h3>
+                <div id="clientDetailsContent" class="text-lg mb-4">
+                    </div>
+                <div class="flex justify-center mt-6">
+                    <button onclick="closeClientDetailsModal()" class="btn-primary">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
+        let nextVehicleCode = parseInt(localStorage.getItem('nextVehicleCode')) || 1;
+        let contasAPagar = JSON.parse(localStorage.getItem('contasAPagar')) || [];
+        let accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+        let aportes = parseFloat(localStorage.getItem('aportes')) || 0;
+        let clients = JSON.parse(localStorage.getItem('clients')) || [];
+        let growthChart;
+
+        function formatCurrency(value) {
+            if (typeof value !== 'number') { value = parseFloat(value); }
+            if (isNaN(value)) { return 'R$ 0,00'; }
+            return `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+        }
+
+        function pad(num, size) {
+            let s = num + "";
+            while (s.length < size) s = "0" + s;
+            return s;
+        }
+
+        function populatePaymentSourceSelect(selectElementId, defaultMessage = "-- Selecione uma Conta --") {
+            const select = document.getElementById(selectElementId);
+            if (!select) {
+                console.warn("Select element not found for ID:", selectElementId);
+                return;
+            }
+            select.innerHTML = `<option value="">${defaultMessage}</option>`;
+            accounts.forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.name;
+                select.appendChild(option);
+            });
+        }
+
+        function showSection(sectionId, clickedButton) {
+            document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            if (clickedButton) clickedButton.classList.add('active');
+
+            if (sectionId === 'dashboard') { updateDashboard(); renderGrowthChart(); }
+            else if (sectionId === 'estoque') { renderEstoque(); }
+            else if (sectionId === 'financeiro') { renderContasAPagar(); updateFinanceiroDisplay(); renderAccounts(); populatePaymentSourceSelect('aporteDestino', "-- Destino do Aporte (Conta) --"); }
+            else if (sectionId === 'gastosVeiculo') { populateVehicleSelect('selectVehicleExpense'); renderVehicleExpenses(); populatePaymentSourceSelect('gastoOrigemPagamento', "-- Origem do Pagamento (Conta) --"); }
+            else if (sectionId === 'cadastro') { document.getElementById('codigoInterno').value = pad(nextVehicleCode, 3); populatePaymentSourceSelect('compraOrigemPagamento', "-- Origem da Compra (Conta) --"); }
+            else if (sectionId === 'relatorios') { updateReports(); populateVehicleSelect('selectVehicleReport'); renderVehicleReport(); }
+            else if (sectionId === 'clientes') { renderClients(); }
+        }
+
+        function showMessageModal(message) {
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('messageModal').style.display = 'flex';
+        }
+        function closeMessageModal() { document.getElementById('messageModal').style.display = 'none'; }
+
+        let vehicleToSellId = null;
+        function openConfirmSaleModal(vehicleId) {
+            vehicleToSellId = vehicleId;
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (vehicle) document.getElementById('actualSalePrice').value = vehicle.precoVenda.toFixed(2);
+            document.getElementById('saleDate').valueAsDate = new Date();
+            populatePaymentSourceSelect('paymentDestination', "-- Destino do Valor (Conta) --");
+            document.getElementById('paymentMethod').addEventListener('change', togglePaymentDestination);
+            togglePaymentDestination();
+            document.getElementById('confirmSaleModal').style.display = 'flex';
+        }
+        function closeConfirmSaleModal() {
+            document.getElementById('confirmSaleModal').style.display = 'none';
+            document.getElementById('saleDetailsForm').reset();
+            const paymentMethodSelect = document.getElementById('paymentMethod');
+            if (paymentMethodSelect) paymentMethodSelect.removeEventListener('change', togglePaymentDestination);
+            vehicleToSellId = null;
+        }
+        function togglePaymentDestination() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const paymentDestinationDiv = document.getElementById('paymentDestinationDiv');
+            const paymentDestinationSelect = document.getElementById('paymentDestination');
+            if (paymentMethod === 'dinheiro' || paymentMethod === 'pix' || paymentMethod === 'transferencia') {
+                paymentDestinationDiv.classList.remove('hidden');
+                paymentDestinationSelect.setAttribute('required', 'true');
+            } else {
+                paymentDestinationDiv.classList.add('hidden');
+                paymentDestinationSelect.removeAttribute('required');
+                paymentDestinationSelect.value = '';
+            }
+        }
+
+        function processTransaction(accountId, amount, isCredit, transactionType = "Transação") {
+            amount = parseFloat(amount);
+            if (isNaN(amount)) { showMessageModal(`Valor inválido para ${transactionType}.`); return false; }
+            const accountIdNum = parseInt(accountId);
+            const account = accounts.find(acc => acc.id === accountIdNum);
+            if (account) {
+                if (isCredit) { account.balance += amount; }
+                else { account.balance -= amount; }
+                localStorage.setItem('accounts', JSON.stringify(accounts));
+            } else { showMessageModal(`Conta (ID: ${accountIdNum}) não encontrada para ${transactionType.toLowerCase()}.`); return false; }
+            return true;
+        }
+
+        document.getElementById('saleDetailsForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const clientName = document.getElementById('clientName').value;
+            const clientCpfCnpj = document.getElementById('clientCpfCnpj').value;
+            const clientPhone = document.getElementById('clientPhone').value;
+            const saleDate = document.getElementById('saleDate').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const paymentDestinationAccountId = document.getElementById('paymentDestination').value;
+            const actualSalePrice = parseFloat(document.getElementById('actualSalePrice').value);
+
+            if (isNaN(actualSalePrice) || actualSalePrice <= 0) { showMessageModal('Por favor, insira um valor de venda válido.'); return; }
+            if ((paymentMethod === 'dinheiro' || paymentMethod === 'pix' || paymentMethod === 'transferencia') && !paymentDestinationAccountId) {
+                showMessageModal('Por favor, selecione a conta de destino do valor.'); return;
+            }
+            if ((paymentMethod === 'dinheiro' || paymentMethod === 'pix' || paymentMethod === 'transferencia') && !processTransaction(paymentDestinationAccountId, actualSalePrice, true, "Venda de Veículo")) {
+                return;
+            }
+
+            let client = clients.find(c => c.cpfCnpj === clientCpfCnpj && clientCpfCnpj !== '');
+            if (!client) {
+                client = { id: Date.now(), name: clientName, cpfCnpj: clientCpfCnpj, phone: clientPhone, purchaseHistory: [] };
+                clients.push(client);
+            } else { client.name = clientName; client.phone = clientPhone; }
+
+            const vehicleIndex = vehicles.findIndex(v => v.id === vehicleToSellId);
+            if (vehicleIndex > -1) {
+                vehicles[vehicleIndex].status = 'vendido'; vehicles[vehicleIndex].dataVenda = saleDate;
+                vehicles[vehicleIndex].precoVenda = actualSalePrice; vehicles[vehicleIndex].clientId = client.id;
+                vehicles[vehicleIndex].paymentDetails = {
+                    method: paymentMethod,
+                    destinationAccountId: (paymentMethod === 'dinheiro' || paymentMethod === 'pix' || paymentMethod === 'transferencia') ? parseInt(paymentDestinationAccountId) : null,
+                    value: actualSalePrice
+                };
+                client.purchaseHistory.push({
+                    vehicleId: vehicles[vehicleIndex].id, saleDate: saleDate, salePrice: actualSalePrice,
+                    vehicleModel: `${vehicles[vehicleIndex].marca} ${vehicles[vehicleIndex].modelo}`
+                });
+                localStorage.setItem('clients', JSON.stringify(clients)); localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                renderEstoque(); updateDashboard(); updateFinanceiroDisplay(); updateReports();
+                populateVehicleSelect('selectVehicleExpense'); populateVehicleSelect('selectVehicleReport');
+                renderClients(); openSaleProfitModal(vehicles[vehicleIndex]); closeConfirmSaleModal();
+            } else { showMessageModal('Erro: Veículo não encontrado para venda.'); }
+        });
+
+        function openSaleProfitModal(vehicle) {
+            const totalExpenses = calculateTotalVehicleExpenses(vehicle.id);
+            const lucroReal = vehicle.precoVenda - vehicle.precoCompra - totalExpenses;
+            const custoTotal = vehicle.precoCompra + totalExpenses;
+            let lucroPercent = 0;
+            if (custoTotal > 0) lucroPercent = (lucroReal / custoTotal) * 100;
+            else if (lucroReal > 0) lucroPercent = Infinity;
+
+            document.getElementById('soldVehicleName').textContent = `${vehicle.marca} ${vehicle.modelo}`;
+            document.getElementById('soldVehicleCodigo').textContent = vehicle.codigoInterno;
+            document.getElementById('soldPriceCompra').textContent = formatCurrency(vehicle.precoCompra);
+            document.getElementById('soldTotalGastos').textContent = formatCurrency(totalExpenses);
+            document.getElementById('soldPriceVenda').textContent = formatCurrency(vehicle.precoVenda);
+            document.getElementById('soldLucroReais').textContent = formatCurrency(lucroReal);
+            document.getElementById('soldLucroReais').className = `font-bold ${lucroReal >= 0 ? 'text-green-success' : 'text-red-danger'}`;
+            document.getElementById('soldLucroPercent').textContent = (lucroPercent === Infinity) ? '∞%' : `${lucroPercent.toFixed(2).replace('.', ',')}%`;
+            document.getElementById('soldLucroPercent').className = `font-bold ${lucroReal >= 0 ? 'text-green-success' : 'text-red-danger'}`;
+            document.getElementById('saleProfitModal').style.display = 'flex';
+        }
+        function closeSaleProfitModal() { document.getElementById('saleProfitModal').style.display = 'none'; }
+
+        let billToPayId = null;
+        function openConfirmPayBillModal(billId) {
+            billToPayId = billId;
+            const bill = contasAPagar.find(c => c.id === billId);
+            if (bill) { document.getElementById('billToPayDescription').textContent = bill.descricao; document.getElementById('billToPayValue').textContent = formatCurrency(bill.valor); }
+            populatePaymentSourceSelect('contaOrigemPagamento', "-- Origem do Pagamento (Conta) --");
+            document.getElementById('confirmPayBillModal').style.display = 'flex';
+        }
+        function closeConfirmPayBillModal() { document.getElementById('confirmPayBillModal').style.display = 'none'; document.getElementById('contaOrigemPagamento').value = ''; billToPayId = null; }
+
+        document.getElementById('confirmPayBillButton').addEventListener('click', function() {
+            if (billToPayId !== null) {
+                const origemPagamentoAccountId = document.getElementById('contaOrigemPagamento').value;
+                if (!origemPagamentoAccountId) { showMessageModal('Por favor, selecione a conta de origem do pagamento.'); return; }
+                markBillAsPaid(billToPayId, origemPagamentoAccountId);
+            }
+        });
+
+        function openManageAccountsModal() { document.getElementById('manageAccountsModal').style.display = 'flex'; renderAccounts(); }
+        function closeManageAccountsModal() { document.getElementById('manageAccountsModal').style.display = 'none'; }
+
+        function calculateTotalVehicleExpenses(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            return vehicle && vehicle.expenses ? vehicle.expenses.reduce((sum, exp) => sum + exp.valor, 0) : 0;
+        }
+        function calculateTotalAvailableBalance() { return accounts.reduce((sum, acc) => sum + acc.balance, 0); }
+        function calculateTotalProfitFromSales(startDateStr = null, endDateStr = null) {
+            let totalProfit = 0;
+            vehicles.filter(v => {
+                if (v.status !== 'vendido' || !v.dataVenda) return false;
+                if (startDateStr && endDateStr) {
+                    const saleDate = new Date(v.dataVenda); const startDate = new Date(startDateStr); const endDate = new Date(endDateStr);
+                    endDate.setHours(23,59,59,999); return saleDate >= startDate && saleDate <= endDate;
+                } return true;
+            }).forEach(v => { totalProfit += (v.precoVenda - v.precoCompra - calculateTotalVehicleExpenses(v.id)); });
+            return totalProfit;
+        }
+
+        function updateDashboard() {
+            const totalDisponiveis = vehicles.filter(v => v.status === 'disponivel').length;
+            const totalVendidosGeral = vehicles.filter(v => v.status === 'vendido').length;
+            const valorEstoqueCustoTotal = vehicles.filter(v => v.status === 'disponivel').reduce((sum, v) => sum + v.precoCompra + calculateTotalVehicleExpenses(v.id), 0);
+            const totalContasPendentesValor = contasAPagar.filter(c => c.status === 'pendente').reduce((sum, c) => sum + c.valor, 0);
+            const saldoTotalDisponivel = calculateTotalAvailableBalance();
+            const patrimonioTotal = saldoTotalDisponivel + valorEstoqueCustoTotal - totalContasPendentesValor;
+            const currentMonth = new Date().getMonth(); const currentYear = new Date().getFullYear();
+            const vendasMesArray = vehicles.filter(v => v.status === 'vendido' && v.dataVenda && new Date(v.dataVenda).getMonth() === currentMonth && new Date(v.dataVenda).getFullYear() === currentYear);
+            const vendasMesCount = vendasMesArray.length;
+            const today = new Date().toISOString().slice(0, 10);
+            const vendasHojeCount = vehicles.filter(v => v.status === 'vendido' && v.dataVenda && v.dataVenda.slice(0, 10) === today).length;
+            const totalVendasValorMes = vendasMesArray.reduce((sum, v) => sum + v.precoVenda, 0);
+            const ticketMedio = vendasMesCount > 0 ? totalVendasValorMes / vendasMesCount : 0;
+            let lucroMes = 0; vendasMesArray.forEach(v => { lucroMes += (v.precoVenda - v.precoCompra - calculateTotalVehicleExpenses(v.id)); });
+            const metaMensal = parseFloat(localStorage.getItem('metaMensal')) || 50000;
+            const metaAtingidaPercent = metaMensal > 0 ? (lucroMes / metaMensal) * 100 : 0;
+            let totalGiroDias = 0; let countGiroVeiculos = 0;
+            vehicles.filter(v => v.status === 'vendido' && v.dataVenda && v.dataEntrada).forEach(v => {
+                const entrada = new Date(v.dataEntrada); const venda = new Date(v.dataVenda);
+                totalGiroDias += Math.ceil(Math.abs(venda - entrada) / (1000 * 60 * 60 * 24)); countGiroVeiculos++;
+            });
+            const giroMedio = countGiroVeiculos > 0 ? totalGiroDias / countGiroVeiculos : 0;
+
+            document.getElementById('saldoTotalDisponivelDisplay').textContent = formatCurrency(saldoTotalDisponivel);
+            document.getElementById('lucroMesDisplay').textContent = formatCurrency(lucroMes);
+            document.getElementById('metaMensalDisplay').textContent = formatCurrency(metaMensal);
+            document.getElementById('metaAtingida').textContent = `${metaAtingidaPercent.toFixed(2).replace('.', ',')}% atingido`;
+            document.getElementById('patrimonioTotalDisplay').textContent = formatCurrency(patrimonioTotal);
+            document.getElementById('valorEstoqueDisplay').textContent = formatCurrency(valorEstoqueCustoTotal);
+            document.getElementById('totalVeiculosEstoque').textContent = `${totalDisponiveis} veículos`;
+            document.getElementById('vendasHoje').textContent = vendasHojeCount;
+            document.getElementById('vendasMes').textContent = vendasMesCount;
+            document.getElementById('ticketMedio').textContent = formatCurrency(ticketMedio);
+            document.getElementById('carrosDisponiveis').textContent = totalDisponiveis;
+            document.getElementById('carrosVendidos').textContent = totalVendidosGeral;
+            document.getElementById('giroMedio').textContent = `${giroMedio.toFixed(0)} dias`;
+            updateFinanceiroDisplay();
+        }
+
+        function renderGrowthChart() {
+            const ctx = document.getElementById('growthChartCanvas').getContext('2d');
+            const monthlyProfit = {};
+            vehicles.filter(v => v.status === 'vendido' && v.dataVenda).forEach(v => {
+                const saleDate = new Date(v.dataVenda);
+                const monthYear = `${(saleDate.getMonth() + 1).toString().padStart(2, '0')}/${saleDate.getFullYear()}`;
+                const profit = v.precoVenda - v.precoCompra - calculateTotalVehicleExpenses(v.id);
+                monthlyProfit[monthYear] = (monthlyProfit[monthYear] || 0) + profit;
+            });
+            const labels = Object.keys(monthlyProfit).sort((a, b) => {
+                const [m1, y1] = a.split('/').map(Number); const [m2, y2] = b.split('/').map(Number);
+                return (y1 - y2) * 12 + (m1 - m2);
+            });
+            const data = labels.map(label => monthlyProfit[label]);
+            if (growthChart) growthChart.destroy();
+            growthChart = new Chart(ctx, {
+                type: 'line', data: { labels: labels, datasets: [{
+                    label: 'Lucro Total Mensal', data: data, borderColor: 'var(--accent-yellow)',
+                    backgroundColor: 'rgba(245, 185, 0, 0.2)', tension: 0.3, fill: true,
+                    pointBackgroundColor: 'var(--accent-yellow)', pointBorderColor: 'var(--accent-yellow)',
+                    pointRadius: 5, pointHoverRadius: 7 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                    scales: { x: { ticks: { color: 'var(--text-light)' }, grid: { color: '#4a4a4a' } },
+                              y: { ticks: { color: 'var(--text-light)', callback: value => formatCurrency(value) }, grid: { color: '#4a4a4a' } } },
+                    plugins: { legend: { labels: { color: 'var(--text-light)' } },
+                               tooltip: { callbacks: { label: context => `${context.dataset.label}: ${formatCurrency(context.raw)}` } } }
+                }
+            });
+        }
+
+        document.getElementById('cadastroForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const precoCompra = parseFloat(document.getElementById('precoCompra').value);
+            const origemPagamentoAccountId = document.getElementById('compraOrigemPagamento').value;
+            if (!origemPagamentoAccountId) { showMessageModal('Por favor, selecione a conta de origem do pagamento da compra.'); return; }
+            if (isNaN(precoCompra) || precoCompra <= 0) { showMessageModal('Por favor, insira um preço de compra válido.'); return; }
+            if (!processTransaction(origemPagamentoAccountId, precoCompra, false, "Compra de Veículo")) return;
+            const newVehicle = {
+                id: Date.now(), codigoInterno: document.getElementById('codigoInterno').value,
+                marca: document.getElementById('marca').value, modelo: document.getElementById('modelo').value,
+                ano: parseInt(document.getElementById('ano').value), km: parseInt(document.getElementById('km').value),
+                cor: document.getElementById('cor').value, placa: document.getElementById('placa').value.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+                cambio: document.getElementById('cambio').value, combustivel: document.getElementById('combustivel').value,
+                chassi: document.getElementById('chassi').value, observacoes: document.getElementById('observacoes').value,
+                precoCompra: precoCompra, precoVenda: parseFloat(document.getElementById('precoVenda').value),
+                status: 'disponivel', expenses: [], dataEntrada: new Date().toISOString().slice(0, 10),
+                origemPagamentoAccountId: parseInt(origemPagamentoAccountId),
+            };
+            vehicles.push(newVehicle); nextVehicleCode++;
+            localStorage.setItem('vehicles', JSON.stringify(vehicles)); localStorage.setItem('nextVehicleCode', nextVehicleCode.toString());
+            renderEstoque(); updateDashboard(); updateReports();
+            populateVehicleSelect('selectVehicleExpense'); populateVehicleSelect('selectVehicleReport');
+            renderClients(); showMessageModal('Veículo cadastrado e valor de compra debitado com sucesso!');
+            this.reset(); document.getElementById('codigoInterno').value = pad(nextVehicleCode, 3);
+            populatePaymentSourceSelect('compraOrigemPagamento', "-- Origem da Compra (Conta) --");
+        });
+
+        function renderEstoque() {
+            const tbody = document.getElementById('estoqueTableBody'); tbody.innerHTML = '';
+            const estoqueMessage = document.getElementById('estoqueMessage');
+            const searchTerm = document.getElementById('buscaEstoque').value.toLowerCase();
+            const filteredVehicles = vehicles.filter(v => v.codigoInterno.toLowerCase().includes(searchTerm) ||
+                v.marca.toLowerCase().includes(searchTerm) || v.modelo.toLowerCase().includes(searchTerm) ||
+                (v.ano && v.ano.toString().includes(searchTerm)) || v.placa.toLowerCase().includes(searchTerm));
+            if (filteredVehicles.length === 0) { estoqueMessage.classList.remove('hidden'); return; }
+            estoqueMessage.classList.add('hidden');
+            filteredVehicles.forEach(vehicle => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${vehicle.codigoInterno}</td> <td>${vehicle.marca}</td> <td>${vehicle.modelo}</td>
+                    <td>${vehicle.ano}</td> <td>${vehicle.placa}</td> <td>${formatCurrency(vehicle.precoCompra)}</td>
+                    <td>${formatCurrency(vehicle.precoVenda)}</td>
+                    <td><span class="px-2 py-1 rounded-full text-xs font-semibold ${vehicle.status === 'disponivel' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'}">${vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}</span></td>
+                    <td class="whitespace-nowrap">
+                        <button onclick="editVehicle(${vehicle.id})" class="btn-primary text-xs px-2 py-1 mr-1"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteVehicle(${vehicle.id})" class="btn-danger text-xs px-2 py-1 mr-1"><i class="fas fa-trash-alt"></i></button>
+                        ${vehicle.status === 'disponivel' ? `<button onclick="openConfirmSaleModal(${vehicle.id})" class="btn-primary text-xs px-2 py-1 bg-green-500 hover:bg-green-600"><i class="fas fa-handshake"></i> Vender</button>` : ''}
+                    </td>`;
+            });
+        }
+        function filtrarEstoque() { renderEstoque(); }
+        function limparBusca() { document.getElementById('buscaEstoque').value = ''; renderEstoque(); }
+        function editVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (vehicle) {
+                showSection('cadastro', document.querySelector('button[onclick*="cadastro"]'));
+                document.getElementById('codigoInterno').value = vehicle.codigoInterno;
+                document.getElementById('marca').value = vehicle.marca; document.getElementById('modelo').value = vehicle.modelo;
+                document.getElementById('ano').value = vehicle.ano; document.getElementById('km').value = vehicle.km;
+                document.getElementById('cor').value = vehicle.cor; document.getElementById('placa').value = vehicle.placa;
+                document.getElementById('cambio').value = vehicle.cambio; document.getElementById('combustivel').value = vehicle.combustivel;
+                document.getElementById('chassi').value = vehicle.chassi; document.getElementById('observacoes').value = vehicle.observacoes;
+                document.getElementById('precoCompra').value = vehicle.precoCompra; document.getElementById('precoVenda').value = vehicle.precoVenda;
+                populatePaymentSourceSelect('compraOrigemPagamento', "-- Origem da Compra (Conta) --");
+                if (vehicle.origemPagamentoAccountId) document.getElementById('compraOrigemPagamento').value = vehicle.origemPagamentoAccountId;
+                showMessageModal('Modo de edição: Altere os campos. A origem do pagamento original foi selecionada, mas a alteração não deduzirá/estornará valores automaticamente nesta versão simplificada de edição.');
+            }
+        }
+        function deleteVehicle(vehicleId) {
+            if (clients.some(c => c.purchaseHistory.some(p => p.vehicleId === vehicleId))) { showMessageModal('Não é possível excluir um veículo vendido. Remova a compra do histórico do cliente.'); return; }
+            if (confirm('Excluir este veículo? Ação irreversível e não estorna valor da compra.')) {
+                vehicles = vehicles.filter(v => v.id !== vehicleId); localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                renderEstoque(); updateDashboard(); updateReports();
+                populateVehicleSelect('selectVehicleExpense'); populateVehicleSelect('selectVehicleReport');
+                showMessageModal('Veículo excluído!');
+            }
+        }
+
+        function populateVehicleSelect(selectElementId) {
+            const select = document.getElementById(selectElementId); if (!select) return;
+            const currentValue = select.value; select.innerHTML = '<option value="">-- Selecione um Veículo --</option>';
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option'); option.value = vehicle.id;
+                option.textContent = `${vehicle.codigoInterno} - ${vehicle.marca} ${vehicle.modelo} (${vehicle.status === 'disponivel' ? 'Disp.' : 'Vend.'})`;
+                select.appendChild(option);
+            });
+            if (currentValue && vehicles.some(v => v.id.toString() === currentValue)) select.value = currentValue;
+        }
+
+        function renderVehicleExpenses() {
+            const vehicleIdStr = document.getElementById('selectVehicleExpense').value;
+            const tbody = document.getElementById('vehicleExpensesTableBody'); tbody.innerHTML = '';
+            const expensesMessage = document.getElementById('vehicleExpensesMessage'); let totalGastos = 0;
+            if (!vehicleIdStr) { expensesMessage.textContent = 'Selecione um veículo.'; expensesMessage.classList.remove('hidden'); document.getElementById('totalGastosVeiculo').textContent = formatCurrency(0); return; }
+            const vehicle = vehicles.find(v => v.id === parseInt(vehicleIdStr));
+            if (!vehicle || !vehicle.expenses || vehicle.expenses.length === 0) { expensesMessage.textContent = 'Nenhum gasto para este veículo.'; expensesMessage.classList.remove('hidden'); document.getElementById('totalGastosVeiculo').textContent = formatCurrency(0); return; }
+            expensesMessage.classList.add('hidden');
+            vehicle.expenses.forEach(expense => {
+                const row = tbody.insertRow();
+                const account = accounts.find(acc => acc.id === expense.origemPagamentoAccountId);
+                const origemPagamentoDisplay = account ? account.name : 'Conta Desc.';
+                row.innerHTML = `
+                    <td>${expense.descricao}</td> <td>${formatCurrency(expense.valor)}</td>
+                    <td>${origemPagamentoDisplay}</td>
+                    <td><button onclick="deleteExpense(${vehicle.id}, ${expense.id})" class="btn-danger text-xs px-2 py-1"><i class="fas fa-trash-alt"></i></button></td>`;
+                totalGastos += expense.valor;
+            });
+            document.getElementById('totalGastosVeiculo').textContent = formatCurrency(totalGastos);
+        }
+
+        document.getElementById('addExpenseForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const vehicleIdStr = document.getElementById('selectVehicleExpense').value;
+            if (!vehicleIdStr) { showMessageModal('Selecione um veículo.'); return; }
+            const vehicleId = parseInt(vehicleIdStr);
+            const descricao = document.getElementById('descricaoGasto').value;
+            const valor = parseFloat(document.getElementById('valorGasto').value);
+            const origemPagamentoAccountId = document.getElementById('gastoOrigemPagamento').value;
+            if (!origemPagamentoAccountId) { showMessageModal('Selecione a conta de origem do pagamento.'); return; }
+            if (isNaN(valor) || valor <= 0) { showMessageModal('Insira um valor de gasto válido.'); return; }
+            if (!processTransaction(origemPagamentoAccountId, valor, false, "Gasto de Veículo")) return;
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (vehicle) {
+                vehicle.expenses.push({ id: Date.now(), descricao, valor, origemPagamentoAccountId: parseInt(origemPagamentoAccountId) });
+                localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                renderVehicleExpenses(); updateDashboard(); updateReports(); this.reset();
+                populatePaymentSourceSelect('gastoOrigemPagamento', "-- Origem do Pagamento (Conta) --");
+                showMessageModal('Gasto adicionado e valor debitado!');
+            }
+        });
+
+        function deleteExpense(vehicleId, expenseId) {
+            if (confirm('Excluir este gasto? Não estorna valor.')) {
+                const vehicle = vehicles.find(v => v.id === vehicleId);
+                if (vehicle) {
+                    vehicle.expenses = vehicle.expenses.filter(e => e.id !== expenseId);
+                    localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                    renderVehicleExpenses(); updateDashboard(); updateReports(); showMessageModal('Gasto excluído!');
+                }
+            }
+        }
+
+        function renderContasAPagar() {
+            const tbody = document.getElementById('contasAPagarTableBody'); tbody.innerHTML = '';
+            const message = document.getElementById('contasAPagarMessage');
+            if (contasAPagar.length === 0) { message.classList.remove('hidden'); return; }
+            message.classList.add('hidden');
+            contasAPagar.sort((a, b) => new Date(a.dataVencimento) - new Date(b.dataVencimento)).forEach(conta => {
+                const row = tbody.insertRow();
+                const isVencida = new Date(conta.dataVencimento + 'T00:00:00') < new Date() && conta.status === 'pendente';
+                const statusClass = conta.status === 'pago' ? 'bg-green-500' : (isVencida ? 'bg-yellow-600' : 'bg-red-500');
+                const statusText = conta.status === 'pago' ? 'Pago' : (isVencida ? 'Vencida' : 'Pendente');
+                row.innerHTML = `
+                    <td>${conta.descricao}</td> <td>${formatCurrency(conta.valor)}</td>
+                    <td>${new Date(conta.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                    <td><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusClass} text-white">${statusText}</span></td>
+                    <td class="whitespace-nowrap">
+                        ${conta.status === 'pendente' ? `<button onclick="openConfirmPayBillModal(${conta.id})" class="btn-primary text-xs px-2 py-1 mr-1 bg-green-500 hover:bg-green-600"><i class="fas fa-check"></i> Pagar</button>` : ''}
+                        <button onclick="deleteContaAPagar(${conta.id})" class="btn-danger text-xs px-2 py-1"><i class="fas fa-trash-alt"></i></button>
+                    </td>`;
+            });
+        }
+
+        document.getElementById('contasAPagarForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            contasAPagar.push({
+                id: Date.now(), descricao: document.getElementById('descricaoConta').value,
+                valor: parseFloat(document.getElementById('valorConta').value),
+                dataVencimento: document.getElementById('dataVencimento').value, status: 'pendente'
+            });
+            localStorage.setItem('contasAPagar', JSON.stringify(contasAPagar));
+            renderContasAPagar(); updateDashboard(); updateReports(); this.reset();
+            showMessageModal('Conta a pagar adicionada!');
+        });
+
+        function markBillAsPaid(billId, origemPagamentoAccountId) {
+            const contaIndex = contasAPagar.findIndex(c => c.id === billId);
+            if (contaIndex > -1) {
+                const valorPago = contasAPagar[contaIndex].valor;
+                if (!processTransaction(origemPagamentoAccountId, valorPago, false, "Pagamento de Conta")) return;
+                contasAPagar[contaIndex].status = 'pago';
+                contasAPagar[contaIndex].origemPagamentoAccountId = parseInt(origemPagamentoAccountId);
+                contasAPagar[contaIndex].dataPagamento = new Date().toISOString().slice(0,10);
+                localStorage.setItem('contasAPagar', JSON.stringify(contasAPagar));
+                renderContasAPagar(); updateDashboard(); updateReports();
+                showMessageModal('Conta paga e valor debitado!'); closeConfirmPayBillModal();
+            }
+        }
+
+        function deleteContaAPagar(billId) {
+            if (confirm('Excluir esta conta?')) {
+                contasAPagar = contasAPagar.filter(c => c.id !== billId);
+                localStorage.setItem('contasAPagar', JSON.stringify(contasAPagar));
+                renderContasAPagar(); updateDashboard(); updateReports(); showMessageModal('Conta excluída!');
+            }
+        }
+
+        function addAporte() {
+            const inputVal = parseFloat(document.getElementById('inputAporte').value);
+            const destinoAporteAccountId = document.getElementById('aporteDestino').value;
+            if (!destinoAporteAccountId) { showMessageModal('Selecione a conta de destino do aporte.'); return; }
+            if (isNaN(inputVal) || inputVal <= 0) { showMessageModal('Insira um valor de aporte válido.'); return; }
+            if (!processTransaction(destinoAporteAccountId, inputVal, true, "Aporte")) return;
+            aportes += inputVal; localStorage.setItem('aportes', aportes.toString());
+            updateFinanceiroDisplay(); updateDashboard(); showMessageModal('Aporte adicionado!');
+            document.getElementById('inputAporte').value = ''; document.getElementById('aporteDestino').value = '';
+        }
+
+        function updateFinanceiroDisplay() {
+            document.getElementById('aportesDisplayFinanceiro').textContent = formatCurrency(aportes);
+            document.getElementById('saldosContasDisplayFinanceiro').textContent = formatCurrency(calculateTotalAvailableBalance());
+        }
+
+        document.getElementById('addAccountForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const accountName = document.getElementById('accountName').value;
+            const accountBalance = parseFloat(document.getElementById('accountBalance').value);
+            if (!accountName || isNaN(accountBalance)) { showMessageModal('Preencha nome e saldo inicial da conta corretamente.'); return; }
+            accounts.push({ id: Date.now(), name: accountName, balance: accountBalance });
+            localStorage.setItem('accounts', JSON.stringify(accounts));
+            renderAccounts(); updateFinanceiroDisplay(); updateDashboard();
+            populatePaymentSourceSelect('compraOrigemPagamento', "-- Origem da Compra (Conta) --");
+            populatePaymentSourceSelect('gastoOrigemPagamento', "-- Origem do Pagamento (Conta) --");
+            populatePaymentSourceSelect('contaOrigemPagamento', "-- Origem do Pagamento (Conta) --");
+            populatePaymentSourceSelect('aporteDestino', "-- Destino do Aporte (Conta) --");
+            populatePaymentSourceSelect('paymentDestination', "-- Destino do Valor (Conta) --");
+            this.reset(); showMessageModal('Conta adicionada com sucesso!');
+        });
+
+        function renderAccounts() {
+            const tbody = document.getElementById('accountsTableBody'); tbody.innerHTML = '';
+            const message = document.getElementById('accountsMessage');
+            if (accounts.length === 0) { message.classList.remove('hidden'); return; }
+            message.classList.add('hidden');
+            accounts.forEach(account => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${account.name}</td> <td>${formatCurrency(account.balance)}</td>
+                    <td class="whitespace-nowrap">
+                        <button onclick="editAccount(${account.id})" class="btn-primary text-xs px-2 py-1 mr-1"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteAccount(${account.id})" class="btn-danger text-xs px-2 py-1"><i class="fas fa-trash-alt"></i></button>
+                    </td>`;
+            });
+        }
+        function editAccount(accountId) {
+            const account = accounts.find(acc => acc.id === accountId);
+            if (account) {
+                const newName = prompt("Novo nome para a conta:", account.name);
+                const newBalanceStr = prompt("Novo saldo para a conta (ex: 1500.50):", account.balance.toFixed(2));
+                if (newName !== null && newName.trim() !== "") account.name = newName;
+                if (newBalanceStr !== null) {
+                    const newBalance = parseFloat(newBalanceStr);
+                    if (!isNaN(newBalance)) account.balance = newBalance; else showMessageModal("Saldo inválido.");
+                }
+                localStorage.setItem('accounts', JSON.stringify(accounts));
+                renderAccounts(); updateFinanceiroDisplay(); updateDashboard();
+                populatePaymentSourceSelect('compraOrigemPagamento'); populatePaymentSourceSelect('gastoOrigemPagamento');
+                populatePaymentSourceSelect('contaOrigemPagamento'); populatePaymentSourceSelect('aporteDestino');
+                populatePaymentSourceSelect('paymentDestination');
+            }
+        }
+        function deleteAccount(accountId) {
+            const accountToDelete = accounts.find(acc => acc.id === accountId);
+            if (accountToDelete && accountToDelete.balance !== 0) {
+                if (!confirm(`A conta "${accountToDelete.name}" tem saldo de ${formatCurrency(accountToDelete.balance)}. Excluir? O saldo não será transferido.`)) return;
+            } else if (!confirm('Excluir esta conta?')) return;
+            accounts = accounts.filter(acc => acc.id !== accountId);
+            localStorage.setItem('accounts', JSON.stringify(accounts));
+            renderAccounts(); updateFinanceiroDisplay(); updateDashboard();
+            populatePaymentSourceSelect('compraOrigemPagamento'); populatePaymentSourceSelect('gastoOrigemPagamento');
+            populatePaymentSourceSelect('contaOrigemPagamento'); populatePaymentSourceSelect('aporteDestino');
+            populatePaymentSourceSelect('paymentDestination');
+            showMessageModal('Conta excluída!');
+        }
+
+        function renderClients() {
+            const tbody = document.getElementById('clientsTableBody'); tbody.innerHTML = '';
+            const message = document.getElementById('clientsMessage');
+            const searchTerm = document.getElementById('buscaCliente').value.toLowerCase();
+            const filteredClients = clients.filter(client => client.name.toLowerCase().includes(searchTerm) || (client.cpfCnpj && client.cpfCnpj.toLowerCase().includes(searchTerm)));
+            if (filteredClients.length === 0) { message.classList.remove('hidden'); return; }
+            message.classList.add('hidden');
+            filteredClients.forEach(client => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${client.name}</td> <td>${client.cpfCnpj || 'N/A'}</td>
+                    <td>${client.phone || 'N/A'}</td> <td>${client.purchaseHistory.length}</td>
+                    <td class="whitespace-nowrap">
+                        <button onclick="openClientDetailsModal(${client.id})" class="btn-primary text-xs px-2 py-1 mr-1"><i class="fas fa-info-circle"></i></button>
+                        <button onclick="editClient(${client.id})" class="btn-primary text-xs px-2 py-1 mr-1"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteClient(${client.id})" class="btn-danger text-xs px-2 py-1"><i class="fas fa-trash-alt"></i></button>
+                    </td>`;
+            });
+        }
+        function searchClients() { renderClients(); }
+        function clearClientSearch() { document.getElementById('buscaCliente').value = ''; renderClients(); }
+        function editClient(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (client) {
+                const newName = prompt("Novo nome:", client.name);
+                const newCpfCnpj = prompt("Novo CPF/CNPJ:", client.cpfCnpj);
+                const newPhone = prompt("Novo telefone:", client.phone);
+                if (newName !== null && newName.trim() !== "") client.name = newName;
+                if (newCpfCnpj !== null) client.cpfCnpj = newCpfCnpj; // Permite limpar
+                if (newPhone !== null) client.phone = newPhone; // Permite limpar
+                localStorage.setItem('clients', JSON.stringify(clients)); renderClients(); updateReports();
+            }
+        }
+        function deleteClient(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (client && client.purchaseHistory.length > 0) { showMessageModal('Cliente com histórico de compras. Remova as vendas ou altere o cliente da venda.'); return; }
+            if (confirm('Excluir este cliente?')) {
+                clients = clients.filter(c => c.id !== clientId);
+                localStorage.setItem('clients', JSON.stringify(clients)); renderClients(); showMessageModal('Cliente excluído!');
+            }
+        }
+        function openClientDetailsModal(clientId) {
+            const client = clients.find(c => c.id === clientId); if (!client) return;
+            const clientDetailsContent = document.getElementById('clientDetailsContent');
+            let purchaseHistoryHTML = 'Nenhuma compra registrada.';
+            if (client.purchaseHistory && client.purchaseHistory.length > 0) {
+                purchaseHistoryHTML = '<ul class="list-disc pl-5 text-sm">';
+                client.purchaseHistory.forEach(ph => { purchaseHistoryHTML += `<li>${ph.vehicleModel} (Vendido em: ${new Date(ph.saleDate).toLocaleDateString('pt-BR')}) - ${formatCurrency(ph.salePrice)}</li>`; });
+                purchaseHistoryHTML += '</ul>';
+            }
+            clientDetailsContent.innerHTML = `
+                <p class="mb-2"><strong>Nome:</strong> ${client.name}</p>
+                <p class="mb-2"><strong>CPF/CNPJ:</strong> ${client.cpfCnpj || 'N/A'}</p>
+                <p class="mb-2"><strong>Telefone:</strong> ${client.phone || 'N/A'}</p>
+                <p class="mb-2"><strong>Histórico de Compras:</strong></p> ${purchaseHistoryHTML}`;
+            document.getElementById('clientDetailsModal').style.display = 'flex';
+        }
+        function closeClientDetailsModal() { document.getElementById('clientDetailsModal').style.display = 'none'; }
+
+        function updateReports() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            const filteredSoldVehicles = vehicles.filter(v => {
+                if (v.status !== 'vendido' || !v.dataVenda) return false;
+                if (startDate && endDate) {
+                    const saleDate = new Date(v.dataVenda + "T00:00:00");
+                    const start = new Date(startDate + "T00:00:00"); const end = new Date(endDate + "T23:59:59");
+                    return saleDate >= start && saleDate <= end;
+                } return true;
+            });
+            const filteredPaidBills = contasAPagar.filter(c => {
+                if (c.status !== 'pago' || !c.dataPagamento) return false;
+                if (startDate && endDate) {
+                    const billDate = new Date(c.dataPagamento + "T00:00:00");
+                    const start = new Date(startDate + "T00:00:00"); const end = new Date(endDate + "T23:59:59");
+                    return billDate >= start && billDate <= end;
+                } return true;
+            });
+            const totalContasPendentesGeral = contasAPagar.filter(c => c.status === 'pendente').reduce((sum, c) => sum + c.valor, 0);
+            document.getElementById('totalCadastrados').textContent = vehicles.length;
+            document.getElementById('totalDisponiveis').textContent = vehicles.filter(v => v.status === 'disponivel').length;
+            document.getElementById('totalVendidos').textContent = filteredSoldVehicles.length;
+            document.getElementById('lucroTotalRelatorio').textContent = formatCurrency(calculateTotalProfitFromSales(startDate, endDate));
+            document.getElementById('totalContasPagasRelatorio').textContent = formatCurrency(filteredPaidBills.reduce((sum, c) => sum + c.valor, 0));
+            document.getElementById('totalContasPendentesRelatorio').textContent = formatCurrency(totalContasPendentesGeral);
+            const distribuicaoMarcaEl = document.getElementById('distribuicaoMarca'); distribuicaoMarcaEl.innerHTML = '';
+            const brandCounts = {};
+            vehicles.filter(v => v.status === 'disponivel').forEach(v => { brandCounts[v.marca] = (brandCounts[v.marca] || 0) + 1; });
+            if (Object.keys(brandCounts).length === 0) distribuicaoMarcaEl.innerHTML = '<li>Nenhum veículo disponível.</li>';
+            else { for (const brand in brandCounts) { const li = document.createElement('li'); li.textContent = `${brand}: ${brandCounts[brand]} veículo(s)`; distribuicaoMarcaEl.appendChild(li); } }
+        }
+
+        function populateVehicleReportSelect() { populateVehicleSelect('selectVehicleReport'); }
+        function renderVehicleReport() {
+            const vehicleIdStr = document.getElementById('selectVehicleReport').value;
+            const vehicleReportDetails = document.getElementById('vehicleReportDetails');
+            if (!vehicleIdStr) { vehicleReportDetails.innerHTML = '<p class="text-gray-400">Selecione um veículo.</p>'; return; }
+            const vehicle = vehicles.find(v => v.id === parseInt(vehicleIdStr));
+            if (!vehicle) { vehicleReportDetails.innerHTML = '<p class="text-red-500">Veículo não encontrado.</p>'; return; }
+            const totalExpenses = calculateTotalVehicleExpenses(vehicle.id);
+            const custoTotalVeiculo = vehicle.precoCompra + totalExpenses;
+            let lucroReal = 'N/A', lucroPercent = 'N/A', lucroColorClass = '';
+            if (vehicle.status === 'vendido') {
+                lucroReal = vehicle.precoVenda - custoTotalVeiculo;
+                if (custoTotalVeiculo > 0) lucroPercent = (lucroReal / custoTotalVeiculo) * 100;
+                else if (lucroReal > 0) lucroPercent = Infinity; else lucroPercent = 0;
+                lucroColorClass = lucroReal >= 0 ? 'text-green-success' : 'text-red-danger';
+            }
+            const lucroRealFormatted = typeof lucroReal === 'number' ? formatCurrency(lucroReal) : lucroReal;
+            const lucroPercentFormatted = lucroPercent === 'N/A' ? 'N/A' : (lucroPercent === Infinity ? '∞%' : `${lucroPercent.toFixed(2).replace('.', ',')}%`);
+            let clientInfo = '', paymentInfo = '';
+            if (vehicle.clientId) {
+                const client = clients.find(c => c.id === vehicle.clientId);
+                if (client) clientInfo = `<p class="report-text mt-2">Cliente: <span class="report-detail font-bold">${client.name}</span></p><p class="report-text">CPF/CNPJ: <span class="report-detail">${client.cpfCnpj || 'N/A'}</span></p>`;
+            }
+            if (vehicle.paymentDetails) {
+                const pd = vehicle.paymentDetails;
+                const methodDisplay = {dinheiro: 'Dinheiro', pix: 'PIX', transferencia: 'Transferência', financiamento: 'Financiamento', cartao: 'Cartão', troca: 'Troca', outro: 'Outro'}[pd.method] || pd.method;
+                let destDisplay = 'N/A';
+                if (pd.destinationAccountId) { const acc = accounts.find(a => a.id === pd.destinationAccountId); destDisplay = acc ? acc.name : 'Conta Desc.'; }
+                paymentInfo = `<p class="report-text mt-2">Forma Pagamento: <span class="report-detail font-bold">${methodDisplay}</span></p>
+                    ${(pd.method === 'dinheiro' || pd.method === 'pix' || pd.method === 'transferencia') ? `<p class="report-text">Destino Valor (Conta): <span class="report-detail">${destDisplay}</span></p>` : ''}
+                    <p class="report-text">Valor Venda Final: <span class="report-detail font-bold">${formatCurrency(pd.value)}</span></p>`;
+            }
+            const origemCompraAccount = accounts.find(acc => acc.id === vehicle.origemPagamentoAccountId);
+            const origemCompraDisplay = origemCompraAccount ? origemCompraAccount.name : 'Conta Desc.';
+            vehicleReportDetails.innerHTML = `
+                <p class="report-text">Código: <span class="report-detail">${vehicle.codigoInterno}</span> | Marca: <span class="report-detail">${vehicle.marca}</span> | Modelo: <span class="report-detail">${vehicle.modelo}</span> | Ano: <span class="report-detail">${vehicle.ano}</span></p>
+                <p class="report-text">Placa: <span class="report-detail">${vehicle.placa}</span> | KM: <span class="report-detail">${vehicle.km}</span> | Cor: <span class="report-detail">${vehicle.cor}</span></p>
+                <p class="report-text">Câmbio: <span class="report-detail">${vehicle.cambio}</span> | Combustível: <span class="report-detail">${vehicle.combustivel}</span> | Chassi: <span class="report-detail">${vehicle.chassi}</span></p>
+                <p class="report-text">Observações: <span class="report-detail">${vehicle.observacoes || 'N/A'}</span></p> <hr class="my-2 border-gray-600">
+                <p class="report-text">Preço de Compra: <span class="report-detail">${formatCurrency(vehicle.precoCompra)}</span> (Origem: ${origemCompraDisplay})</p>
+                <p class="report-text">Gastos Totais: <span class="report-detail">${formatCurrency(totalExpenses)}</span></p>
+                <p class="report-text font-semibold">Custo Total: <span class="report-detail font-bold">${formatCurrency(custoTotalVeiculo)}</span></p>
+                <p class="report-text">Preço Venda Sugerido: <span class="report-detail">${formatCurrency(vehicle.precoVenda)}</span></p>
+                <p class="report-text">Status: <span class="report-detail font-bold">${vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1)}</span></p>
+                ${vehicle.dataEntrada ? `<p class="report-text">Data Entrada: <span class="report-detail">${new Date(vehicle.dataEntrada + 'T00:00:00').toLocaleDateString('pt-BR')}</span></p>` : ''}
+                ${vehicle.status === 'vendido' ? ` <hr class="my-2 border-gray-600"> <p class="report-text font-semibold">Detalhes da Venda:</p>
+                    <p class="report-text">Data Venda: <span class="report-detail">${new Date(vehicle.dataVenda + 'T00:00:00').toLocaleDateString('pt-BR')}</span></p>
+                    ${clientInfo} ${paymentInfo}
+                    <p class="report-text mt-2">Lucro Real: <span class="font-bold ${lucroColorClass} report-detail">${lucroRealFormatted}</span></p>
+                    <p class="report-text">Lucro em Porcentagem: <span class="font-bold ${lucroColorClass} report-detail">${lucroPercentFormatted}</span></p>` : ''}`;
+        }
+
+        function createBackup() {
+            const data = {
+                vehicles: vehicles, nextVehicleCode: nextVehicleCode, contasAPagar: contasAPagar,
+                accounts: accounts, aportes: aportes, clients: clients
+            };
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob); const a = document.createElement('a');
+            a.href = url; a.download = `backup_rahn_multimarcas_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            showMessageModal('Backup (JSON) criado!');
+        }
+
+        // NOVO: Função para lidar com a restauração do backup
+        function handleRestoreFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (confirm('Restaurar dados a partir deste backup? Os dados atuais neste navegador serão substituídos.')) {
+                            // Validar minimamente se o JSON tem as chaves esperadas
+                            if (data.vehicles && data.accounts && data.contasAPagar && data.clients &&
+                                typeof data.nextVehicleCode !== 'undefined' && typeof data.aportes !== 'undefined') {
+
+                                vehicles = data.vehicles || [];
+                                nextVehicleCode = parseInt(data.nextVehicleCode) || 1;
+                                contasAPagar = data.contasAPagar || [];
+                                accounts = data.accounts || [];
+                                aportes = parseFloat(data.aportes) || 0;
+                                clients = data.clients || [];
+
+                                // Salvar tudo no localStorage do navegador atual
+                                localStorage.setItem('vehicles', JSON.stringify(vehicles));
+                                localStorage.setItem('nextVehicleCode', nextVehicleCode.toString());
+                                localStorage.setItem('contasAPagar', JSON.stringify(contasAPagar));
+                                localStorage.setItem('accounts', JSON.stringify(accounts));
+                                localStorage.setItem('aportes', aportes.toString());
+                                localStorage.setItem('clients', JSON.stringify(clients));
+
+                                showMessageModal('Backup restaurado com sucesso! A página será recarregada para aplicar todas as alterações.');
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 2500);
+
+                            } else {
+                                showMessageModal('Arquivo de backup parece ser inválido ou não contém os dados esperados.');
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Erro ao processar arquivo de backup:", error);
+                        showMessageModal('Erro ao ler o arquivo de backup. Verifique se é um arquivo JSON válido gerado pelo sistema.');
+                    }
+                    event.target.value = null; // Limpar o input para permitir selecionar o mesmo arquivo novamente
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function exportToCsv() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const vehicleHeaders = ["ID", "Codigo Interno", "Marca", "Modelo", "Ano", "KM", "Cor", "Placa", "Cambio", "Combustivel", "Chassi", "Preco Compra", "Origem Compra (Conta)", "Preco Venda Sugerido", "Preco Venda Real", "Status", "Data Entrada", "Data Venda", "Observacoes", "Gastos Totais", "Cliente Nome", "Cliente CPF/CNPJ", "Cliente Telefone", "Forma Pagamento Venda", "Destino Pagamento Venda (Conta)"];
+            csvContent += vehicleHeaders.join(";") + "\n";
+            vehicles.forEach(v => {
+                const totalExpenses = calculateTotalVehicleExpenses(v.id);
+                const client = v.clientId ? clients.find(c => c.id === v.clientId) : null;
+                const paymentMethodDisplay = v.paymentDetails ? ({dinheiro: 'Dinheiro', pix: 'PIX', transferencia: 'Transferência', financiamento: 'Financiamento', cartao: 'Cartão', troca: 'Troca', outro: 'Outro'}[v.paymentDetails.method] || v.paymentDetails.method) : "N/A";
+                let paymentDestinationName = 'N/A';
+                if (v.paymentDetails && v.paymentDetails.destinationAccountId) { const acc = accounts.find(a => a.id === v.paymentDetails.destinationAccountId); paymentDestinationName = acc ? acc.name : 'Conta Desc.'; }
+                const origemCompraAccount = accounts.find(acc => acc.id === v.origemPagamentoAccountId);
+                const origemCompraDisplay = origemCompraAccount ? origemCompraAccount.name : 'Conta Desc.';
+                const row = [
+                    v.id, v.codigoInterno, v.marca, v.modelo, v.ano, v.km, v.cor, v.placa, v.cambio, v.combustivel, v.chassi,
+                    v.precoCompra.toFixed(2).replace('.', ','), origemCompraDisplay,
+                    (v.originalPrecoVenda || v.precoVenda).toFixed(2).replace('.', ','), // Usa originalPrecoVenda se existir, senão precoVenda
+                    v.status === 'vendido' ? v.precoVenda.toFixed(2).replace('.', ',') : "N/A", v.status,
+                    v.dataEntrada ? new Date(v.dataEntrada+'T00:00:00').toLocaleDateString('pt-BR') : "N/A",
+                    v.dataVenda ? new Date(v.dataVenda+'T00:00:00').toLocaleDateString('pt-BR') : "N/A",
+                    `"${v.observacoes ? v.observacoes.replace(/"/g, '""') : ''}"`, totalExpenses.toFixed(2).replace('.', ','),
+                    `"${client ? client.name.replace(/"/g, '""') : 'N/A'}"`, `"${client ? (client.cpfCnpj || '').replace(/"/g, '""') : 'N/A'}"`,
+                    `"${client ? (client.phone || '').replace(/"/g, '""') : 'N/A'}"`, paymentMethodDisplay, paymentDestinationName
+                ].join(";");
+                csvContent += row + "\n";
+            });
+            const encodedUri = encodeURI(csvContent); const link = document.createElement("a");
+            link.setAttribute("href", encodedUri); link.setAttribute("download", `dados_veiculos_rahn_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showMessageModal('Dados de veículos exportados para CSV!');
+        }
+
+        function sendWhatsAppSummary() {
+            const totalDisponiveis = vehicles.filter(v => v.status === 'disponivel').length;
+            const lucroTotalGeral = calculateTotalProfitFromSales();
+            const totalContasPendentes = contasAPagar.filter(c => c.status === 'pendente').reduce((sum, c) => sum + c.valor, 0);
+            let summary = `*Resumo Rahn Multimarcas (${new Date().toLocaleDateString('pt-BR')})*\n\n`;
+            summary += `💰 *Financeiro:*\n`;
+            summary += `- Saldo Total Disponível: ${formatCurrency(calculateTotalAvailableBalance())}\n`;
+            summary += `- Lucro Total (Vendas Histórico): ${formatCurrency(lucroTotalGeral)}\n`;
+            summary += `- Contas a Pagar (Pendentes): ${formatCurrency(totalContasPendentes)}\n`;
+            summary += `\n🚗 *Estoque:*\n`;
+            summary += `- Veículos Disponíveis: ${totalDisponiveis}\n`;
+            summary += `- Valor do Estoque (Custo): ${document.getElementById('valorEstoqueDisplay').textContent}\n`;
+            summary += `\n_Gerado em: ${new Date().toLocaleTimeString('pt-BR')}_`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(summary)}`, '_blank');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('dashboard', document.querySelector('.nav-btn.active'));
+            renderEstoque(); renderContasAPagar();
+            populateVehicleSelect('selectVehicleExpense'); populateVehicleSelect('selectVehicleReport');
+            updateFinanceiroDisplay(); updateReports(); updateDashboard();
+            renderGrowthChart(); renderClients(); renderAccounts();
+
+            // NOVO: Adicionar event listener para o input de restaurar arquivo
+            const restoreFileInput = document.getElementById('restoreFile');
+            if (restoreFileInput) {
+                restoreFileInput.addEventListener('change', handleRestoreFile);
+            }
+        });
+    </script>
+</body>
+</html>
